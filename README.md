@@ -1,2 +1,12 @@
-# weather-station
-all-in-on weather station based on an nodemcu esp8266
+# Weather-Station
+
+ All-in-One Weather Station based on a Nodemcu esp8266 providing the following sensor data
+ - temperature
+ - humidity
+ - air-pressure
+ - light
+ - luftdaten (particles)
+ - rain
+ - wind
+
+ (c) 2019 Mr. Di-Ai-Wai
