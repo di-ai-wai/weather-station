@@ -35,8 +35,7 @@
 #include <PubSubClient.h>       // https://github.com/knolleary/pubsubclient/releases/tag/v2.6
 #include <Wire.h>
 #include <SoftwareSerial.h>
-#include <DHT.h>
-#include <DHT_U.h>
+#include "./DHT.h"
 #include <Adafruit_BME280.h>
 #include <time.h>
 #include <coredecls.h>
@@ -211,7 +210,8 @@ String esp_chipid;
 /*****************************************************************
  * DHT declaration                                               *
  *****************************************************************/
-DHT_Unified dht(DHT_PIN, DHT_TYPE);
+DHT dht(DHT_PIN, DHT_TYPE);
+//DHT dht(DHT_PIN, DHT_TYPE);
 
 /*****************************************************************
  * BME280 declaration                                            *
@@ -487,12 +487,12 @@ Dht sensorDHT() {
 	int count = 0;
 	const int MAX_ATTEMPTS = 5;
 	while ((count++ < MAX_ATTEMPTS) /* && (result == nullptr)*/) {
-		auto h = dht.humidity().getEvent(&event);
-		auto t = dht.temperature().getEvent(&event);
+		auto h = dht.readHumidity();
+		auto t = dht.readTemperature();
 		if (isnan(t) || isnan(h)) {
 			delay(100);
-			h = event.relative_humidity;
-			t = event.temperature;
+			h = dht.readHumidity();
+			t = dht.readTemperature(false);
 		}
 		if (isnan(t) || isnan(h)) {
 			//debug_out(String(FPSTR(SENSORS_DHT22)) + FPSTR(DBG_TXT_COULDNT_BE_READ), DEBUG_ERROR, 1);
@@ -604,9 +604,9 @@ static void powerOnTestSensors() {
 		dht.begin();                                        // Start DHT
 		sensor_t sensor;
 		DEBUG_PRINTLN(F("Read DHT..."));
-		dht.temperature().getSensor(&sensor);
-		DEBUG_PRINT(F("Sensor Type "));
-		DEBUG_PRINTLN(sensor.name);
+		//dht.temperature().getSensor(&sensor);
+		//DEBUG_PRINT(F("Sensor Type "));
+		//DEBUG_PRINTLN(sensor.name);
 		DEBUG_PRINTLN(F("check DHT: ok"));
 	}
 
@@ -860,7 +860,7 @@ void setup() {
 	DEBUG_PRINTLN(String(got_ntp?"":"not ")+F("received"));
 
   // get the Chip ID of the switch and use it as the MQTT client ID
-  sprintf(MQTT_CLIENT_ID, "%06X", ESP.getChipId());
+  sprintf(MQTT_CLIENT_ID, "%06x", ESP.getChipId());
   DEBUG_PRINT(F("INFO: MQTT client ID/Hostname: "));
   DEBUG_PRINTLN(MQTT_CLIENT_ID);
   DEBUG_PRINT(F("INFO: CHIP: "));
