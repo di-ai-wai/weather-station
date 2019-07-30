@@ -35,7 +35,7 @@
 #include <PubSubClient.h>       // https://github.com/knolleary/pubsubclient/releases/tag/v2.6
 #include <Wire.h>
 #include <SoftwareSerial.h>
-#include "./DHT.h"
+#include <DHT.h>
 #include <Adafruit_BME280.h>
 #include <time.h>
 #include <coredecls.h>
@@ -54,7 +54,7 @@
 #define           NOT_CONNECTED             false
 
 // Board properties
-#define           FW_VERSION                "0.1.0"
+#define           FW_VERSION                "0.2.0"
 #define           ALIAS                     "aio-weather-station"
 #define           LOCATION                  "garden"
 #define           CHIP                      "esp8266"
@@ -922,7 +922,7 @@ void setup() {
 void loop() {
 	Sds result_SDS;
 	Dht result_DHT;
-	//Bme280 result_BME280;
+	Bme280 result_BME280;
 
 	unsigned long sum_send_time = 0;
 	unsigned long start_send;
@@ -962,15 +962,13 @@ void loop() {
 		//yield();
 
 		//if ((msSince(starttime_SDS) > SAMPLETIME_SDS_MS) || send_now) {
-		DEBUG_PRINTLN(F("Start reading SDS"));
-		result_SDS = sensorSDS();
+
 			//starttime_SDS = act_milli;
 		//}
 
-		DEBUG_PRINTLN(F("Start reading DHT"));
-		result_DHT = sensorDHT();
-
 		if (cfg::sds_read) {
+			DEBUG_PRINTLN(F("Start reading SDS"));
+			result_SDS = sensorSDS();
 			//data += result_SDS;
 			//if (cfg::send2dusti) {
 				now = time(nullptr);
@@ -987,6 +985,8 @@ void loop() {
 			//}
 		}
 		if (cfg::dht_read) {
+			DEBUG_PRINTLN(F("Start reading DHT"));
+			result_DHT = sensorDHT();
 			DEBUG_PRINTLN(String(FPSTR(F("Luftdaten "))) + F("(DHT): "));
 			DEBUG_PRINT(result_DHT.temp);
 			DEBUG_PRINT(F(", "));
@@ -995,6 +995,23 @@ void loop() {
 			publishData(MQTT_ENDPOINT_SENSOR_DHT_TEMP, result_DHT.temp);
 			publishData(MQTT_ENDPOINT_SENSOR_DHT_HUM, result_DHT.hum);
 			//sendLuftdaten(result_DHT, DHT_API_PIN, HOST_DUSTI, HTTP_PORT_DUSTI, URL_DUSTI, true, "DHT_");
+			sum_send_time += millis() - start_send;
+		}
+
+		if (cfg::bme_read && (!bme_init_failed)) {
+			DEBUG_PRINTLN(F("Start reading BME"));
+			result_BME280 = sensorBME280();
+			DEBUG_PRINTLN(String(FPSTR(F("Luftdaten "))) + F("(BME): "));
+			DEBUG_PRINT(result_BME280.temp);
+			DEBUG_PRINT(F(", "));
+			DEBUG_PRINT(result_BME280.hum);
+			DEBUG_PRINT(F(", "));
+			DEBUG_PRINTLN(result_BME280.press);
+			start_send = millis();
+			//debug_out(String(FPSTR(DBG_TXT_CALL_SENSOR)) + FPSTR(SENSORS_BME280), DEBUG_MAX_INFO, 1);
+			publishData(MQTT_ENDPOINT_SENSOR_BME_TEMP, result_BME280.temp);
+			publishData(MQTT_ENDPOINT_SENSOR_BME_HUM, result_BME280.hum);
+			publishData(MQTT_ENDPOINT_SENSOR_BME_PRESS, result_BME280.press);
 			sum_send_time += millis() - start_send;
 		}
 
